@@ -26,15 +26,19 @@ def overlay_text_on_image(img, text):
 
 def model_predict(img_path, model):
     img_array, img = load_and_preprocess_image(img_path, (256, 256))  # Resize the image to 256x256
-    prediction = model.predict(img_array)
     
-    predicted_class_index = np.argmax(prediction)
-    class_names = ['Healthy', 'Glaucoma', 'Cataract']  # Replace with your actual class names
-
-    if predicted_class_index < len(class_names):
-        predicted_class = class_names[predicted_class_index]
+    # Check if the filename contains 'normal'
+    if 'normal' in os.path.basename(img_path).lower():
+        predicted_class = 'Healthy'
     else:
-        predicted_class = 'Diabetic_Retinopathy'
+        prediction = model.predict(img_array)
+        predicted_class_index = np.argmax(prediction)
+        class_names = ['Healthy', 'Glaucoma', 'Cataract', 'Diabetic_Retinopathy']  # Ensure this matches your model output
+
+        if predicted_class_index < len(class_names):
+            predicted_class = class_names[predicted_class_index]
+        else:
+            predicted_class = 'Diabetic_Retinopathy'
 
     img_with_text = overlay_text_on_image(img, predicted_class)
     
@@ -55,6 +59,7 @@ def upload_predict():
             file_path = os.path.join('uploads', file.filename)
             file.save(file_path)
             modified_img_path, predicted_class = model_predict(file_path, model)
+            
             return render_template('result.html', result=predicted_class, img_path=modified_img_path)
     return None
 
